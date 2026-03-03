@@ -280,10 +280,14 @@ def _compute_root_causes(current_sensors: dict, current_safe_limits: dict):
         span = max(max(span_candidates) if span_candidates else 1.0, 1.0)
 
         if upper is not None and sensor_value > upper:
-            exceeded.append((sensor, (sensor_value - upper) / span))
+            breach_magnitude = (sensor_value - upper) / span
+            if breach_magnitude >= 0.01:  # Filter out noise breaches (<1% overshoot)
+                exceeded.append((sensor, breach_magnitude))
             continue
         if lower is not None and sensor_value < lower:
-            exceeded.append((sensor, (lower - sensor_value) / span))
+            breach_magnitude = (lower - sensor_value) / span
+            if breach_magnitude >= 0.01:  # Filter out noise breaches (<1% undershoot)
+                exceeded.append((sensor, breach_magnitude))
             continue
 
         distances = []
@@ -556,7 +560,7 @@ def build_control_room_payload(machine_id: str, time_window: int = 240, future_w
 
     root_causes, breached_sensors = _compute_root_causes(current_sensors, current_safe_limits)
     base_risk = float(current_row.get("scrap_probability", 0.0) or 0.0)
-    risk_penalty = min(0.35, 0.12 * len(breached_sensors))
+    risk_penalty = min(0.25, 0.06 * len(breached_sensors))
     current_risk = min(1.0, base_risk + risk_penalty)
 
     if breached_sensors or current_risk >= float(ML_THRESHOLDS.get("MEDIUM", 0.60)):

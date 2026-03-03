@@ -80,9 +80,9 @@ def calculate_dynamic_limits(recent_history: pd.DataFrame) -> dict:
             min_limit = setpoint - abs(tol_minus)
             max_limit = setpoint + abs(tol_plus)
         else:
-            # --- BUCKET C: Statistical Process Control (3σ with 2% floor) ---
+            # --- BUCKET C: Statistical Process Control (3σ with 5% floor) ---
             sigma = std_val if not pd.isna(std_val) else 0.0
-            safe_margin = max(sigma * 3, abs(setpoint) * 0.02)
+            safe_margin = max(sigma * 3, abs(setpoint) * 0.05)
             min_limit = setpoint - safe_margin
             max_limit = setpoint + safe_margin
 
